@@ -1,6 +1,7 @@
 import sqlite3
 from flask import Flask, render_template,url_for,redirect,request
 import sqlite3
+import hashlib
 
 
 
@@ -23,6 +24,7 @@ def login():
         cur=conn.cursor()
         username=request.form.get('username')
         password=request.form.get('password')
+        password=hashlib.sha256(bytes(password,'utf-8')).hexdigest()
         # " OR "1"="1
         # " OR "1"="1"; DROP TABLE users;
         SQL=f'SELECT rowid,username, password FROM users WHERE username="{username}" AND password="{password}"'
@@ -48,9 +50,14 @@ def register():
         conn=sqlite3.connect("store.db")
         cur=conn.cursor()
         print(request.form)
+        
         SQL='INSERT INTO users VALUES ('
         for field in list(request.form):
-            SQL+=f'"{request.form[field]}", '
+            campo=field
+            valor=request.form[field]
+            if campo=='password':
+                valor=hashlib.sha256(bytes(valor,'utf-8')).hexdigest()
+            SQL+=f'"{valor}", '
         SQL=SQL.rstrip(', ')
         SQL+=')'
         print("create user",SQL)
