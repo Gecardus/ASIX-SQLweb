@@ -2,7 +2,6 @@ import sqlite3
 from flask import Flask, render_template,url_for,redirect,request
 import sqlite3
 import hashlib
-from cryptography.fernet import fernet
 from createdb import cypher_suite
 import uuid
 
@@ -51,10 +50,10 @@ def register():
         conn=sqlite3.connect("store.db")
         cur=conn.cursor()
         print(request.form)
-        
+        ID=str(uuid.uuid4())
         SQL='INSERT INTO users VALUES ('
 
-        SQL+='"'+str[uuid.uuid4()]+'",'
+        SQL+='"'+ID+'",'
         for field in list(request.form):
             campo=field
             valor=request.form[field]
@@ -62,19 +61,20 @@ def register():
                 valor=hashlib.sha256(bytes(valor,'utf-8')).hexdigest()
             
             elif campo=="adress":
-                valor=cypher_suite.encrypt(bytes(valor,'utf-8')).hexdigest()
+                valor=cypher_suite.encrypt(bytes(valor,'utf-8')).decode()
             SQL+=f'"{valor}", '
         SQL=SQL.rstrip(', ')
+        SQL+=',"'+str(2)+'"'
         SQL+=')'
         print("create user",SQL)
         try:
             cur.execute(SQL)
             conn.commit()
-            newuserid=cur.lastrowid
+            newuserid=ID
             registered=True
         except Exception as e:
             return render_template("register.html",errors=e)
-
+    
     if registered:
         return redirect('user/'+str(newuserid))
     else:
@@ -89,7 +89,7 @@ def user(userid):
     userdata=cur.execute(SQL).fetchone()
     
     #get products
-    SQL=f'SELECT name,price,image FROM purchases INNER JOIN products ON purchases.product_id=products.rowid WHERE purchases.username_id={userid}'
+    SQL=f'SELECT name,price,image FROM purchases INNER JOIN products ON purchases.product_id=products.rowid WHERE purchases.username_id="{userid}"'
     prod=cur.execute(SQL).fetchall()
     print("products",prod)
     return render_template("user.html", userdata={"username":userdata[0],"adress":cypher_suite.decrypt(userdata[1]).decode(),"products":prod})
