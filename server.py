@@ -2,8 +2,9 @@ import sqlite3
 from flask import Flask, render_template,url_for,redirect,request
 import sqlite3
 import hashlib
-
-
+from cryptography.fernet import fernet
+from createdb import cypher_suite
+import uuid
 
 app = Flask(__name__)
 
@@ -27,7 +28,7 @@ def login():
         password=hashlib.sha256(bytes(password,'utf-8')).hexdigest()
         # " OR "1"="1
         # " OR "1"="1"; DROP TABLE users;
-        SQL=f'SELECT rowid,username, password FROM users WHERE username="{username}" AND password="{password}"'
+        SQL=f'SELECT id,username, password FROM users WHERE username="{username}" AND password="{password}"'
         print(SQL)
         try:
             res=cur.execute(SQL).fetchone()
@@ -52,11 +53,16 @@ def register():
         print(request.form)
         
         SQL='INSERT INTO users VALUES ('
+
+        SQL+='"'+str[uuid.uuid4()]+'",'
         for field in list(request.form):
             campo=field
             valor=request.form[field]
             if campo=='password':
                 valor=hashlib.sha256(bytes(valor,'utf-8')).hexdigest()
+            
+            elif campo=="adress":
+                valor=cypher_suite.encrypt(bytes(valor,'utf-8')).hexdigest()
             SQL+=f'"{valor}", '
         SQL=SQL.rstrip(', ')
         SQL+=')'
@@ -74,19 +80,19 @@ def register():
     else:
         return render_template("register.html")
 
-@app.route("/user/<int:userid>")
+@app.route("/user/<string:userid>")
 def user(userid):
     # get user data
     conn=sqlite3.connect("store.db")
     cur=conn.cursor()
-    SQL=f'SELECT username, adress FROM users WHERE rowid='+str(userid)
+    SQL=f'SELECT username, adress FROM users WHERE id="{userid}"'
     userdata=cur.execute(SQL).fetchone()
-
+    
     #get products
     SQL=f'SELECT name,price,image FROM purchases INNER JOIN products ON purchases.product_id=products.rowid WHERE purchases.username_id={userid}'
     prod=cur.execute(SQL).fetchall()
     print("products",prod)
-    return render_template("user.html", userdata={"username":userdata[0],"adress":userdata[1],"products":prod})
+    return render_template("user.html", userdata={"username":userdata[0],"adress":cypher_suite.decrypt(userdata[1]).decode(),"products":prod})
 
 if __name__ == "__main__":
-  app.run(debug=True,host="0.0.0.0")
+    app.run(debug=True,host="0.0.0.0")

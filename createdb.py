@@ -1,19 +1,21 @@
 import sqlite3
 import hashlib
+import uuid
 
 conn=sqlite3.connect("store.db")
 
 cur=conn.cursor()
-
+key=b'-J0EgKZvTK2JT44tLtaxg5t6T3j_O9KRyornUaxjJws='
+cypher_suite=Fernet(key)
 #tabla users
-cur.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT,adress TEXT,rol INTEGER)")
+cur.execute("CREATE TABLE IF NOT EXISTS users (id TEXT, username TEXT, password TEXT,adress TEXT,rol INTEGER)")
 conn.commit()
 users=[
-    ("admin",hashlib.sha256(b"asix2023").hexdigest(),"Rambla Catalunya 82 bajos",1),
-    ("carlos",hashlib.sha256(b"12345").hexdigest(),"Carretera de Sants 12 3o 1a",2),
-    ("julia", hashlib.sha256(b"pass6789").hexdigest(), "Avenida Diagonal 401 2o 2a",2),
-    ("marc", hashlib.sha256(b"marc2024").hexdigest(), "Gran Via 555 5o 3a",2),
-    ("lucia", hashlib.sha256(b"mypassword").hexdigest(), "Passeig de Gracia 60 1o 1a",2),
+    (str[uuid.uuid4()],"admin",hashlib.sha256(b"asix2023").hexdigest(),cypher_suite(b"Rambla Catalunya 82 bajos"),1),
+    (str[uuid.uuid4()],"carlos",hashlib.sha256(b"12345").hexdigest(),cypher_suite(b"Carretera de Sants 12 3o 1a"),2),
+    (str[uuid.uuid4()],"julia", hashlib.sha256(b"pass6789").hexdigest(), cypher_suite(b"Avenida Diagonal 401 2o 2a"),2),
+    (str[uuid.uuid4()],"marc", hashlib.sha256(b"marc2024").hexdigest(), cypher_suite(b"Gran Via 555 5o 3a"),2),
+    (str[uuid.uuid4()],"lucia", hashlib.sha256(b"mypassword").hexdigest(), cypher_suite(b"Passeig de Gracia 60 1o 1a"),2),
 ]
 for e in users:
     cur.execute("INSERT INTO users (username,password,adress,rol) VALUES (?,?,?,?)",e)
